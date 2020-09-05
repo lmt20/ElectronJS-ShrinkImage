@@ -1,0 +1,24 @@
+{
+  "name": "shrinkimage",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "nodemon --exec electron ."
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^10.1.1",
+    "nodemon": "^2.0.4"
+  },
+  "dependencies": {
+    "electron-reload": "^1.5.0",
+    "imagemin": "^7.0.1",
+    "imagemin-jpegtran": "^7.0.0",
+    "imagemin-pngquant": "^9.0.0",
+    "jquery": "^3.5.1",
+    "slash": "^3.0.0"
+  }
+}
