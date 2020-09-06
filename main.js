@@ -1,36 +1,46 @@
-const { app, BrowserWindow, Menu, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, shell, screen } = require('electron');
 const path = require('path');
 const os = require('os');
 const slash = require('slash');
 const imagemin = require('imagemin');
 const imageminJpegtran = require('imagemin-jpegtran');
 const imageminPngquant = require('imagemin-pngquant');
-require('electron-reload')(__dirname);
 
 
+process.env.NODE_ENV = "production"
+const isDev = process.env.NODE_ENV !== "production"
+let primaryDisplay;
 let mainWindow;
 
 function createMainWindow() {
     mainWindow = new BrowserWindow({
         title: "ImageShrink",
-        width: 1000,
-        height: 600,
+        width: isDev ? 1000 : 500,
+        height: isDev? primaryDisplay.size.height : 600,
         icon: './assets/icons/shrink-arrows-rounded-icon.jpg',
         webPreferences: {
-            nodeIntegration: true
-        }
+            nodeIntegration: true,
+        },
     })
     mainWindow.loadFile('./app/index.html')
+    if(isDev ){
+        mainWindow.webContents.openDevTools()
+    }
 }
 
 function createAboutWindow() {
+    console.log((primaryDisplay.size.width - 500)/2);
+
     aboutWindow = new BrowserWindow({
         title: "ImageShrink",
-        width: 300,
-        height: 300,
+        width: (primaryDisplay.size.width - 500)/2 > 500 ? 500 : (primaryDisplay.size.width - 500)/2,
+        height: isDev? primaryDisplay.size.height : 600,
+        x: (primaryDisplay.size.width - 500)/2 > 500? (primaryDisplay.size.width - 500)/2 - 500: 0,
+        y: (primaryDisplay.size.height - 600)/2+12,
         icon: './assets/icons/shrink-arrows-rounded-icon.jpg',
     })
-    aboutWindow.loadFile('./app/about.html')
+    // aboutWindown.loadUrl('https://github.com/lmt20')
+    aboutWindow.loadURL('https://github.com/lmt20')
 }
 
 async function shrinkImage({fileUploadPath, fileUploadName, quality, dest}){
@@ -63,6 +73,7 @@ app.on('ready', () => {
     })
     const menu = Menu.buildFromTemplate(template)
     Menu.setApplicationMenu(menu)
+    primaryDisplay = screen.getPrimaryDisplay()
     createMainWindow()
 })
 
