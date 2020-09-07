@@ -1,23 +1,23 @@
-const { app, BrowserWindow, Menu, ipcMain, shell, screen } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, shell, screen, Tray } = require('electron');
 const path = require('path');
 const os = require('os');
 const slash = require('slash');
-const imagemin = require('imagemin');
-const imageminJpegtran = require('imagemin-jpegtran');
-const imageminPngquant = require('imagemin-pngquant');
 
 
-process.env.NODE_ENV = "production"
+process.env.NODE_ENV = "development"
 const isDev = process.env.NODE_ENV !== "production"
 let primaryDisplay;
 let mainWindow;
+let tray;
 
 function createMainWindow() {
     mainWindow = new BrowserWindow({
         title: "ImageShrink",
-        width: isDev ? 1000 : 500,
+        width: isDev ?  primaryDisplay.size.width : 500,
         height: isDev? primaryDisplay.size.height : 600,
-        icon: './assets/icons/shrink-arrows-rounded-icon.jpg',
+        icon: './assets/icons/cpu.png',
+        // show: false,
+        opacity: 0.9,
         webPreferences: {
             nodeIntegration: true,
         },
@@ -37,33 +37,12 @@ function createAboutWindow() {
         height: isDev? primaryDisplay.size.height : 600,
         x: (primaryDisplay.size.width - 500)/2 > 500? (primaryDisplay.size.width - 500)/2 - 500: 0,
         y: (primaryDisplay.size.height - 600)/2+12,
-        icon: './assets/icons/shrink-arrows-rounded-icon.jpg',
+        icon: './assets/icons/cpu.png',
     })
     // aboutWindown.loadUrl('https://github.com/lmt20')
     aboutWindow.loadURL('https://github.com/lmt20')
 }
 
-async function shrinkImage({fileUploadPath, fileUploadName, quality, dest}){
-    const pngQuality = quality/100
-    const files = await imagemin([slash(fileUploadPath)], {
-		destination: dest,
-		plugins: [
-			imageminJpegtran(quality),
-			imageminPngquant({
-				quality: [pngQuality, pngQuality]
-			})
-		]
-    });
-    shell.showItemInFolder(path.join(dest, fileUploadName))
-    mainWindow.webContents.send('shrinkimage:done', "Done")
-}
-
-
-ipcMain.on('image:shrink', (event, args) => {
-    args['dest'] = path.join(os.homedir(), 'shrinkimage', )
-    shrinkImage(args)
-
-})
 
 app.on('ready', () => {
     const template = require('./utils/menu');
@@ -71,10 +50,39 @@ app.on('ready', () => {
         label: "About",
         click: createAboutWindow
     })
+    template[1].submenu.unshift({
+        label: "Toggle Nav",
+        click: () => {
+          mainWindow.webContents.send('nav:toggle')
+        },
+        accelerator: 'CmdOrCtrl+N'
+    })
     const menu = Menu.buildFromTemplate(template)
     Menu.setApplicationMenu(menu)
     primaryDisplay = screen.getPrimaryDisplay()
     createMainWindow()
+
+    const iconPath = path.join(__dirname, 'assets', 'icons','cpu.png')
+    tray = new Tray(iconPath)
+    tray.on('click', () => {
+        if(mainWindow.isVisible() === true){
+            mainWindow.hide()
+        }
+        else{
+            mainWindow.show()
+        }
+    })
+    tray.on('right-click', () => {
+        console.log("okkfoko");
+        const contextMenu = Menu.buildFromTemplate([{
+            label: 'Quit',
+            click: () => {
+                app.isQuitting = true,
+                app.quit()
+            }
+        }])
+        tray.popUpContextMenu(contextMenu);
+    })
 })
 
 app.on('window-all-closed', () => {
